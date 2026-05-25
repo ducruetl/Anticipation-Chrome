@@ -47,6 +47,8 @@ function hideTimes(){
 		    var vidTime = times[i];
 		    vidTime.textContent = "Time Hidden";
 		}
+
+		// Hide current video time and duration
 		times = document.getElementsByClassName("ytp-time-duration")
 		for(i = 0; i < times.length; i++){
 			var vidTime = times[i];
@@ -66,6 +68,15 @@ function hideTimes(){
 			var vidTime = times[i];
 			vidTime.remove();
 		}
+
+		// Hide video time on video thumbnail
+		times = document.getElementsByClassName("ytBadgeShapeText");
+		for(i = 0; i < times.length; i++){
+			var vidTime = times[i];
+			vidTime.remove();
+		}
+
+		// Hide current video progress bar
 		times = document.getElementsByClassName("ytp-progress-bar-container")
 		for(i = 0; i < times.length; i++){
 			var vidTime = times[i];
