@@ -56,6 +56,16 @@ function hideTimes(){
 		 	par1.appendChild(repText);
 			i--;
 		}
+		times = document.getElementsByClassName("ytp-time-current");
+		for(i = 0; i < times.length; i++){
+			var vidTime = times[i];
+			vidTime.remove();
+		}
+		times = document.getElementsByClassName("ytp-time-separator");
+		for(i = 0; i < times.length; i++){
+			var vidTime = times[i];
+			vidTime.remove();
+		}
 		times = document.getElementsByClassName("ytp-progress-bar-container")
 		for(i = 0; i < times.length; i++){
 			var vidTime = times[i];
