@@ -1,124 +1,191 @@
-var enabled = false;
-chrome.runtime.sendMessage({method: "enabled"}, function(response) {
-  	enabled = response.data;
-});
+(() => {
+    "use strict";
 
-var twitch = false;
-var url = window.location.href;
-twitch = (url.indexOf("twitch.tv") > -1);
+    const isTwitch = location.hostname.includes("twitch.tv");
 
-url = " ";
+    const TEXT_HIDDEN = "Time Hidden";
+    const TEXT_HIDDEN_FULL = "Time Hidden by Anticipation for YouTube and Twitch";
 
-if(enabled) hideTimes();
+    /*
+     * -------------------------
+     * Utility Functions
+     * -------------------------
+     */
 
-document.addEventListener('DOMContentLoaded', function() {
-	if(enabled) hideTimes();
-});
+    function forEachNode(selector, callback) {
+        document.querySelectorAll(selector).forEach(callback);
+    }
 
-(document.body || document.documentElement).addEventListener('transitionend',
-  function(/*TransitionEvent*/ event) {
-  	if(enabled) hideTimes();
-}, true);
+    function replaceText(selector, text) {
+        forEachNode(selector, element => {
+            if (element.textContent !== text) {
+                element.textContent = text;
+            }
+        });
+    }
 
-function hideTimes(){
-	if(!twitch){
-		var times = document.getElementsByClassName("video-time")
-		for(i = 0; i < times.length; i++){
-			var vidTime = times[i];
-			vidTime.textContent="Time Hidden";
-		}
-        times = document.getElementsByClassName("style-scope ytd-thumbnail-overlay-time-status-renderer")
-        for (i = 0; i < times.length; i++) {
-            var vidTime = times[i];
-            vidTime.textContent = "Time Hidden";
+    function removeElements(selector) {
+        forEachNode(selector, element => element.remove());
+    }
+
+    function replaceElementWithText(selector, text) {
+        forEachNode(selector, element => {
+            const parent = element.parentNode;
+
+            if (!parent) {
+                return;
+            }
+
+            if (parent.dataset.anticipationReplaced === "true") {
+                element.remove();
+                return;
+            }
+
+            const replacement = document.createElement("span");
+            replacement.textContent = text;
+
+            parent.dataset.anticipationReplaced = "true";
+
+            element.replaceWith(replacement);
+        });
+    }
+
+    function hideByVisibility(selector) {
+        forEachNode(selector, element => {
+            element.style.visibility = "hidden";
+        });
+    }
+
+    /*
+     * -------------------------
+     * YouTube
+     * -------------------------
+     */
+
+    function hideYouTubeTimes() {
+        // Hide thumbnail durations
+        replaceText(".video-time", TEXT_HIDDEN);
+
+        replaceText(
+            ".style-scope.ytd-thumbnail-overlay-time-status-renderer",
+            TEXT_HIDDEN
+        );
+
+        replaceText(
+            ".ytp-videowall-still-info-duration",
+            TEXT_HIDDEN
+        );
+
+        replaceText(
+            ".ytp-tooltip-duration",
+            TEXT_HIDDEN
+        );
+
+        replaceText(
+            ".ytp-ce-video-duration",
+            TEXT_HIDDEN
+        );
+
+        // Player current/duration time
+        replaceElementWithText(
+            ".ytp-time-duration",
+            TEXT_HIDDEN
+        );
+
+        removeElements(".ytp-time-current");
+        removeElements(".ytp-time-separator");
+
+        // Thumbnail badges
+        removeElements(".ytBadgeShapeText");
+
+        // Progress bar
+        hideByVisibility(".ytp-progress-bar-container");
+
+        // Comments timestamps / metadata timestamps
+        replaceElementWithText(
+            ".timestamp",
+            TEXT_HIDDEN
+        );
+    }
+
+    /*
+     * -------------------------
+     * Twitch
+     * -------------------------
+     */
+
+    function hideTwitchTimes() {
+        replaceText(
+            ".player-seek__time.player-seek__time--total",
+            TEXT_HIDDEN_FULL
+        );
+
+        removeElements(
+            ".player-slider.player-slider--roundhandle.js-player-slider"
+        );
+
+        replaceText(
+            ".card__meta.card__meta--right",
+            TEXT_HIDDEN
+        );
+
+        forEachNode(".info", element => {
+            if (element.textContent.includes(":")) {
+                element.textContent = TEXT_HIDDEN;
+            }
+        });
+    }
+
+    /*
+     * -------------------------
+     * Main
+     * -------------------------
+     */
+
+    function hideTimes() {
+        if (isTwitch) {
+            hideTwitchTimes();
+        } else {
+            hideYouTubeTimes();
         }
-		times = document.getElementsByClassName("ytp-videowall-still-info-duration")
-		for (i = 0; i < times.length; i++) {
-		    var vidTime = times[i];
-		    vidTime.textContent = "Time Hidden";
-		}
-		times = document.getElementsByClassName("ytp-tooltip-duration")
-		for (i = 0; i < times.length; i++) {
-		    var vidTime = times[i];
-		    vidTime.textContent = "Time Hidden";
-		}
-		times = document.getElementsByClassName("ytp-ce-video-duration")
-		for (i = 0; i < times.length; i++) {
-		    var vidTime = times[i];
-		    vidTime.textContent = "Time Hidden";
-		}
+    }
 
-		// Hide current video time and duration
-		times = document.getElementsByClassName("ytp-time-duration")
-		for(i = 0; i < times.length; i++){
-			var vidTime = times[i];
-			var par1 = vidTime.parentNode
-			par1.removeChild(vidTime);
-			var repText = document.createTextNode("Time hidden by Anticipation");
-		 	par1.appendChild(repText);
-			i--;
-		}
-		times = document.getElementsByClassName("ytp-time-current");
-		for(i = 0; i < times.length; i++){
-			var vidTime = times[i];
-			vidTime.remove();
-		}
-		times = document.getElementsByClassName("ytp-time-separator");
-		for(i = 0; i < times.length; i++){
-			var vidTime = times[i];
-			vidTime.remove();
-		}
+    function startObserver() {
+        const observer = new MutationObserver(() => {
+            hideTimes();
+        });
 
-		// Hide video time on video thumbnail
-		times = document.getElementsByClassName("ytBadgeShapeText");
-		for(i = 0; i < times.length; i++){
-			var vidTime = times[i];
-			vidTime.remove();
-		}
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
 
-		// Hide current video progress bar
-		times = document.getElementsByClassName("ytp-progress-bar-container")
-		for(i = 0; i < times.length; i++){
-			var vidTime = times[i];
-			vidTime.textContent="Time Hidden by Anticipation for YouTube and Twitch - Use Arrow Keys to seek";
-			vidTime.style.textAlign = "center";
-		}
-		times = document.getElementsByClassName("timestamp")
-		for(i = 0; i < times.length; i++){
-			var vidTime = times[i];
-			var par1 = vidTime.parentNode
-			par1.removeChild(vidTime);
-			var repText = document.createTextNode("Time hidden by Anticipation for YouTube");
-		 	par1.appendChild(repText);
-			i--;
-		}
-	}
-	else{
-		var times = document.getElementsByClassName("player-seek__time player-seek__time--total")
-		for(i = 0; i < times.length; i++){
-			var vidTime = times[i];
-			vidTime.textContent="Time Hidden by Anticipation for YouTube and Twitch - Use Arrow Keys to seek";
-		}
-		var times = document.getElementsByClassName("player-slider player-slider--roundhandle js-player-slider")
-		for(i = 0; i < times.length; i++){
-			var vidTime = times[i];
-			var par1 = vidTime.parentNode
-			par1.removeChild(vidTime);
-			i--;
-		}
-		var times = document.getElementsByClassName("card__meta card__meta--right")
-		for(i = 0; i < times.length; i++){
-			var vidTime = times[i];
-			vidTime.textContent="Time Hidden by Anticipation";
-		}
-		var times = document.getElementsByClassName("info")
-		for(i = 0; i < times.length; i++){
-			var vidTime = times[i];
-			var text = vidTime.textContent
-			var timeBool = (text.indexOf(":") > -1);
-			if(timeBool){
-				vidTime.textContent="Time Hidden";
-			}
-		}
-	}
-}
+    function init(enabled) {
+        if (!enabled) {
+            return;
+        }
+
+        hideTimes();
+        startObserver();
+    }
+
+    /*
+     * -------------------------
+     * Extension State
+     * -------------------------
+     */
+    
+    chrome.runtime.sendMessage(
+        { method: "enabled" },
+        response => {
+            const enabled = Boolean(response?.data);
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", () => init(enabled), { once: true });
+            } else {
+                init(enabled);
+            }
+        }
+    );
+})();
