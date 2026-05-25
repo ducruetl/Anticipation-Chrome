@@ -1,0 +1,13 @@
+#button-enable {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: .25rem;
+    cursor: pointer;
+    font-family: system-ui,-apple-system,system-ui,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    justify-content: center;
+    line-height: 1.25;
+    padding: calc(.875rem - 1px) calc(1.5rem - 1px);
+    text-decoration: none;
+    color: white;
+}
